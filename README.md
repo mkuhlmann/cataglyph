@@ -73,12 +73,13 @@ module exiftool can't update it, so the EXIF self-test stops every conversion. I
 Building needs `squashfs-tools`. On Ubuntu 24.04+ (AppArmor restricts unprivileged user
 namespaces) the AppImage starts Electron with `--no-sandbox`.
 
-On macOS (Apple silicon) it writes `artifacts/Cataglyph-<version>-arm64.zip` and `.dmg`. That
-build has not been run on a Mac yet; see [`docs/macos.md`](docs/macos.md).
+On macOS (Apple silicon) it writes `artifacts/Cataglyph-<version>-arm64.zip` and `.dmg`
+(unsigned). `bun run vendor` builds cjxl/djxl from source there, which needs cmake. The build
+is tested in CI but hasn't been used on a real Mac yet; see [`docs/macos.md`](docs/macos.md).
 
 Releases come from GitHub Actions: commits follow Conventional Commits, release-please keeps a
 release PR with the next version and changelog, and merging it publishes a GitHub release with
-the AppImage and its SHA-256 checksum attached.
+the AppImage and the macOS zip + dmg attached, each with its SHA-256 checksum.
 
 ## Data
 
