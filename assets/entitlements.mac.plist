@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Hardened runtime blocks JIT: both Electron's V8 and the bundled Bun's JavaScriptCore
+         need writable+executable memory. -->
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+    <!-- Bun loads Eye's libEyeNode.dylib and koffi's .node, and spawns cjxl/djxl: all are
+         signed with our identity, but library validation would still reject anything whose
+         Team ID differs from the loading binary's (e.g. the Bun copy keeps no Team ID). -->
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
+</dict>
+</plist>

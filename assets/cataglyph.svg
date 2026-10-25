@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- A desert "glyph": an eye whose iris is the sun (Cataglyphis steers by a sun compass) and a
+       lens (it culls photos); below it the winding search path and the straight path home. -->
+  <!-- Flat fills only: ImageMagick's SVG renderer draws url(#gradient) fills black. -->
+  <rect x="16" y="22" width="224" height="224" rx="52" fill="#0d121b"/>
+  <rect x="16" y="16" width="224" height="224" rx="52" fill="#1a2436"/>
+  <path d="M16 170 C80 144 150 144 240 166 V188 Q240 240 188 240 H68 Q16 240 16 188 Z" fill="#223049"/>
+  <g transform="translate(0 -12)">
+    <path d="M36 126 Q128 44 220 126 Q128 196 36 126 Z" fill="#f1e4c6" stroke="#f1e4c6"
+          stroke-width="10" stroke-linejoin="round"/>
+    <circle cx="128" cy="122" r="37" fill="#f0b440"/>
+    <circle cx="128" cy="122" r="26" fill="none" stroke="#c4841a" stroke-width="4"/>
+    <circle cx="128" cy="122" r="15" fill="#141c2b"/>
+    <g fill="none" stroke="#f1e4c6" stroke-width="12" stroke-linecap="round">
+      <path d="M110 164 L102 210"/>
+      <path d="M152 162 C162 200 198 208 206 184 C212 164 188 160 184 176"/>
+    </g>
+  </g>
+</svg>
