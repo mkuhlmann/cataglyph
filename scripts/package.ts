@@ -141,6 +141,9 @@ async function packageLinux() {
     const appDir = join(WORK, "Cataglyph.AppDir");
     const app = join(appDir, "cataglyph");
 
+    // The electron package has no postinstall: importing it downloads the binary into
+    // node_modules/electron/dist when that is missing, as in a fresh CI checkout.
+    await import("electron");
     // The stock Electron distribution is already a relocatable directory. Everything stays,
     // including chrome-sandbox, locales and the Chromium license pages (LICENSES.chromium.html
     // has to ship with the binary).

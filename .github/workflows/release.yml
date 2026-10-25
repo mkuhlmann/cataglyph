@@ -1,0 +1,100 @@
+# Versioning and releases, driven by Conventional Commits (see CLAUDE.md, Conventions).
+#
+# Every push to main lets release-please update an open release PR: the next version (from the
+# commit types since the last release: fix -> patch, feat -> minor, while < 1.0 a breaking
+# change -> minor too) in package.json and .release-please-manifest.json, plus CHANGELOG.md.
+# Merging that PR tags vX.Y.Z and creates the GitHub release; the appimage job then builds
+# from that tag and attaches the AppImage and its checksum to the release.
+#
+# A manual run (workflow_dispatch) only builds and keeps the AppImage as a workflow artifact,
+# to check the build without releasing anything.
+
+name: Release
+
+on:
+    push:
+        branches: [main]
+    workflow_dispatch:
+
+permissions:
+    contents: write
+    pull-requests: write
+
+concurrency:
+    group: release-${{ github.ref }}
+    cancel-in-progress: false
+
+jobs:
+    release-please:
+        if: github.event_name == 'push'
+        runs-on: ubuntu-24.04
+        outputs:
+            release_created: ${{ steps.release.outputs.release_created }}
+            tag_name: ${{ steps.release.outputs.tag_name }}
+        steps:
+            - uses: googleapis/release-please-action@v5
+              id: release
+              with:
+                  config-file: release-please-config.json
+                  manifest-file: .release-please-manifest.json
+
+    appimage:
+        needs: release-please
+        # On a manual run release-please is skipped, which would skip this job too without
+        # !cancelled().
+        if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || needs.release-please.outputs.release_created == 'true') }}
+        runs-on: ubuntu-24.04
+        env:
+            TAG: ${{ needs.release-please.outputs.tag_name }}
+        steps:
+            - uses: actions/checkout@v7
+              with:
+                  ref: ${{ env.TAG || github.ref }}
+
+            # mksquashfs assembles the AppImage; lzip unpacks the libjxl release tarball.
+            - name: Install build tools
+              run: sudo apt-get update && sudo apt-get install -y --no-install-recommends squashfs-tools lzip
+
+            # The same Bun as locally: the packaged app ships this binary as resources/app/bin/bun.
+            - uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: 1.4.4
+
+            # cjxl/djxl, the LiteRT accelerator, the Eye weights and the AppImage runtime are pinned
+            # by checksum in fetch-vendor.ts, so the script's content is the cache key.
+            - uses: actions/cache@v6
+              with:
+                  path: |
+                      vendor
+                      models
+                  key: vendor-${{ runner.os }}-${{ hashFiles('scripts/fetch-vendor.ts') }}
+
+            - uses: actions/cache@v6
+              with:
+                  path: ~/.cache/electron
+                  key: electron-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+
+            - run: bun install --frozen-lockfile
+            - run: bun run vendor
+            - run: bun run typecheck
+            - run: bun test
+            - run: bun run package
+
+            - name: Checksum
+              working-directory: artifacts
+              run: sha256sum *.AppImage > "$(ls *.AppImage).sha256"
+
+            - name: Attach to release
+              if: env.TAG != ''
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: gh release upload "$TAG" artifacts/*.AppImage artifacts/*.sha256 --clobber
+
+            - name: Keep as workflow artifact
+              if: env.TAG == ''
+              uses: actions/upload-artifact@v7
+              with:
+                  name: Cataglyph-AppImage
+                  path: |
+                      artifacts/*.AppImage
+                      artifacts/*.sha256

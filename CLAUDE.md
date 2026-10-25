@@ -47,6 +47,11 @@ bun run package                 # AppImage (Linux) / zip + dmg (macOS) into arti
 `artifacts/Cataglyph-<version>-x86_64.AppImage` on Linux, `Cataglyph-<version>-arm64.zip` (+ `.dmg`)
 on macOS. Hutch needs `~/.hutch/bin` on PATH.
 
+Releases are automated (`.github/workflows/release.yml`): release-please keeps a release PR
+open that bumps `package.json` and writes `CHANGELOG.md` from the commit types; merging it tags
+`vX.Y.Z`, and CI attaches the AppImage + `.sha256` to the GitHub release. Never bump the version
+by hand. The workflow pins Bun 1.4.4 (it ships as `bin/bun`): keep it in step with local Bun.
+
 ## Conventions
 
 - 4-space indent, double quotes, semicolons, trailing commas. Imports use `.ts` extensions.

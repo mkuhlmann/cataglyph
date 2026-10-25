@@ -1,0 +1,14 @@
+{
+    "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+    "bootstrap-sha": "8061f39deef8140b37d881bd967025ef2a446d7b",
+    "packages": {
+        ".": {
+            "release-type": "node",
+            "package-name": "cataglyph",
+            "bump-minor-pre-major": true,
+            "bump-patch-for-minor-pre-major": false,
+            "include-component-in-tag": false,
+            "changelog-path": "CHANGELOG.md"
+        }
+    }
+}

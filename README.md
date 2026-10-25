@@ -74,6 +74,10 @@ namespaces) the AppImage starts Electron with `--no-sandbox`.
 On macOS (Apple silicon) it writes `artifacts/Cataglyph-<version>-arm64.zip` and `.dmg`. That
 build has not been run on a Mac yet; see [`docs/macos.md`](docs/macos.md).
 
+Releases come from GitHub Actions: commits follow Conventional Commits, release-please keeps a
+release PR with the next version and changelog, and merging it publishes a GitHub release with
+the AppImage and its SHA-256 checksum attached.
+
 ## Data
 
 - Linux: `~/.cache/org.mkuhlmann.cataglyph/`: thumbnails, analysis cache, 720p AV1 video proxies, and
