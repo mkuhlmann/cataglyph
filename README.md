@@ -2,11 +2,12 @@
 
 Named after *Cataglyphis*, the genus of desert ants (Eye, the classifier, comes from Desert Ant Labs), plus *glyph*: an image, a sign.
 
-Desktop app for culling a folder of new photos and archiving the keepers as JPEG XL. The UI is available in English and German (auto-selected from the system locale, switchable in Settings).
+Desktop app for culling a folder of new photos and archiving the keepers as JPEG XL.
 
-![Gallery after analysis: blurry shots and duplicates flagged for deletion, bursts stacked, RAW badges](docs/screenshots/overview.webp)
-
-![Detail view: why a shot is flagged, Eye's ratings and tags, metadata, and the burst it belongs to](docs/screenshots/detail.webp)
+<p>
+  <img src="docs/screenshots/overview.webp" width="49%" alt="Gallery after analysis: blurry shots and duplicates flagged for deletion, bursts stacked, RAW badges">
+  <img src="docs/screenshots/detail.webp" width="49%" alt="Detail view: why a shot is flagged, Eye's ratings and tags, metadata, and the burst it belongs to">
+</p>
 
 1. **Open a folder.** JPG+RAW (Sony ARW, phone DNG), HEIC, Live/Motion Photos, videos and
    sidecars (`.pp3`, `.xmp`) are grouped into items. The JPG is shown, the RAW appears as a

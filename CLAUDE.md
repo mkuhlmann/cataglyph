@@ -55,6 +55,9 @@ on macOS. Hutch needs `~/.hutch/bin` on PATH.
 - `noUncheckedIndexedAccess` is on: narrow, don't `!`.
 - Tests live in `test/*.test.ts` (bun:test). Filesystem tests work in a fresh temp dir and
   never touch real photo folders.
+- Commit messages follow Conventional Commits: `type(scope): summary`, e.g. `feat: …`,
+  `fix(ui): …`, `docs(readme): …`, `refactor(convert): …`, `chore: …`. No `Co-Authored-By`
+  trailer.
 
 ## Invariants
 
