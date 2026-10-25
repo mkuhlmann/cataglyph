@@ -82,9 +82,17 @@ jobs:
             # fetch-vendor.ts) is preinstalled on the runner image.
             - name: Install build tools
               if: runner.os == 'macOS'
+              # IO::Compress::Brotli builds through Alien::cmake3, which failed intermittently on
+              # the runner (once building, once configuring; the next run passed). Retried, with
+              # cpanm's build log printed so a failure that stays is readable.
               run: |
                   brew install cpanminus
-                  cpanm --notest IO::Compress::Brotli
+                  for attempt in 1 2 3; do
+                      cpanm --notest IO::Compress::Brotli && break
+                      tail -n 60 ~/.cpanm/build.log || true
+                      [ "$attempt" = 3 ] && exit 1
+                      sleep 15
+                  done
                   perl -MIO::Uncompress::Brotli -e 'print "perl Brotli ok\n"'
 
             # The same Bun as locally: the packaged app ships this binary as resources/app/bin/bun.
