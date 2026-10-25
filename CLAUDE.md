@@ -45,7 +45,7 @@ bun run package                 # AppImage (Linux) / zip + dmg (macOS) into arti
 ```
 
 `hutch run package` is the same (alias `hutch run appimage`). Output:
-`artifacts/Cataglyph-<version>-x86_64.AppImage` on Linux, `Cataglyph-<version>-arm64.zip` (+ `.dmg`)
+`artifacts/Cataglyph-<version>-linux-x86_64.AppImage` on Linux, `Cataglyph-<version>-macos-arm64.zip` (+ `.dmg`)
 on macOS. Hutch needs `~/.hutch/bin` on PATH.
 
 Releases are automated (`.github/workflows/release.yml`): release-please keeps a release PR
