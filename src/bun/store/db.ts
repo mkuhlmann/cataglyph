@@ -13,7 +13,7 @@
 // and app droppings in it would be archived along with the photos.
 
 import { Database } from "bun:sqlite";
-import { existsSync, mkdirSync, readdirSync, renameSync, rmdirSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, renameSync, rmdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 import { DEFAULT_SETTINGS, type AnalysisSummary, type Decision, type Settings } from "../../shared/types.ts";
@@ -70,7 +70,7 @@ export class Store {
     private cache: Database;
     private state: Database;
 
-    constructor(cachePath = join(CACHE_DIR, "cache.db"), statePath = join(DATA_DIR, "state.db")) {
+    constructor(private cachePath = join(CACHE_DIR, "cache.db"), statePath = join(DATA_DIR, "state.db")) {
         this.cache = open(cachePath);
         this.state = open(statePath);
         this.cache.exec(`
@@ -126,6 +126,29 @@ export class Store {
         this.cache
             .query("INSERT OR REPLACE INTO basics (content_key, capture_time, width, height) VALUES (?, ?, ?, ?)")
             .run(contentKey, b.captureTime, b.width, b.height);
+    }
+
+    /** Cached analyses (all models) and the size of cache.db on disk, WAL included. */
+    cacheUsage(): { bytes: number; count: number } {
+        const row = this.cache.query<{ n: number }, []>("SELECT COUNT(*) AS n FROM analyses").get();
+        let bytes = 0;
+        for (const suffix of ["", "-wal", "-shm"]) {
+            try {
+                bytes += statSync(this.cachePath + suffix).size;
+            } catch {
+                // No WAL right after a checkpoint.
+            }
+        }
+        return { bytes, count: row?.n ?? 0 };
+    }
+
+    /**
+     * Empties cache.db: analyses and basics. DELETE alone leaves the file at its size, so it
+     * is vacuumed and the WAL truncated to give the space back.
+     */
+    clearCache() {
+        this.cache.exec("DELETE FROM analyses; DELETE FROM basics;");
+        this.cache.exec("VACUUM; PRAGMA wal_checkpoint(TRUNCATE);");
     }
 
     getDecisions(folder: string): Record<string, Decision> {

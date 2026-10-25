@@ -124,6 +124,11 @@ const inflight = new Map<string, Promise<Playable>>();
 // otherwise start an ffprobe.
 const resolved = new Map<string, Playable>();
 
+/** Forgets resolved proxies after the cache was cleared, so the next play encodes again. */
+export function forgetProxies() {
+    for (const [key, p] of resolved) if (p.path.startsWith(VIDEO_DIR)) resolved.delete(key);
+}
+
 export class TranscodeDisabled extends Error {
     constructor() {
         super("video transcoding is turned off");

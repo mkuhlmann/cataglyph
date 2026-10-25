@@ -73,6 +73,17 @@ export interface ConvertPreview {
     motion: number;
 }
 
+/**
+ * Parts of the cache dir the user can clear (settings → Cache). "browser" is Chromium's HTTP
+ * cache, which the main process owns; `count` is the number of entries where one is known.
+ */
+export type CachePart = "thumbs" | "video" | "analyses" | "browser";
+
+export interface CacheUsage {
+    dir: string;
+    parts: Record<CachePart, { bytes: number; count: number | null }>;
+}
+
 export type CataglyphRPC = {
     bun: {
         requests: {
@@ -99,6 +110,9 @@ export type CataglyphRPC = {
              * encoded now; progress arrives as videoProgress). Then load /video.
              */
             prepareVideo: { params: { id: string }; response: { ok: true } | { ok: false; error: string; disabled?: true } };
+            cacheUsage: { params: {}; response: CacheUsage };
+            /** Clears the given parts and answers with what is left. Refused during an analysis. */
+            clearCache: { params: { parts: CachePart[] }; response: CacheUsage };
             /** Opens an https:// link in the default browser (the Desert Ant Labs credit). */
             openUrl: { params: { url: string }; response: boolean };
         };
@@ -145,6 +159,8 @@ export type HostRequests = {
     openUrl: { params: { url: string }; response: boolean };
     /** Moves files to the system trash, one result per path (apply/trash.ts on macOS). */
     trash: { params: { paths: string[] }; response: { path: string; ok: boolean; error?: string }[] };
+    /** Size of Chromium's HTTP cache in bytes, after clearing it when `clear` is set. */
+    browserCache: { params: { clear: boolean }; response: number };
 };
 
 /** A request's outcome as it crosses process boundaries: errors travel as their message. */

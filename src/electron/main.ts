@@ -7,7 +7,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
-import { app, BrowserWindow, dialog, ipcMain, Menu, screen, shell } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, Menu, screen, session, shell } from "electron";
 
 import { CACHE_DIR } from "../bun/store/dirs.ts";
 import { Sidecar } from "./sidecar.ts";
@@ -79,6 +79,12 @@ const startSidecar = () => new Sidecar({
                 }
             }
             return results;
+        },
+        // The view's media URLs are cached as immutable (media/server.ts), so thumbnails the
+        // Bun process has long deleted can still sit here.
+        browserCache: async ({ clear }: { clear: boolean }) => {
+            if (clear) await session.defaultSession.clearCache();
+            return session.defaultSession.getCacheSize();
         },
     },
     onMessage: (name, payload) => win?.webContents.send("rpc-message", name, payload),

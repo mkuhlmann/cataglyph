@@ -5,16 +5,18 @@
 
 import { homedir } from "node:os";
 
-import type { Details, FileInfo } from "../shared/rpc.ts";
+import type { CachePart, CacheUsage, Details, FileInfo } from "../shared/rpc.ts";
 import type { Settings } from "../shared/types.ts";
 import { setHostTrash } from "./apply/trash.ts";
 import { EyeClient } from "./classify/eye-client.ts";
 import { host, send, serve } from "./host.ts";
 import { MediaServer } from "./media/server.ts";
-import { playable, TranscodeDisabled } from "./media/video.ts";
+import { THUMB_DIR } from "./media/thumbs.ts";
+import { forgetProxies, playable, TranscodeDisabled, VIDEO_DIR } from "./media/video.ts";
 import { readDetails, shutdownMetadata } from "./meta/metadata.ts";
 import { Session } from "./session.ts";
-import { loadSettings, saveSettings, Store } from "./store/db.ts";
+import { clearDir, dirUsage } from "./store/cache.ts";
+import { CACHE_DIR, loadSettings, saveSettings, Store } from "./store/db.ts";
 
 // The UI language for "auto". The main process passes the desktop's preferred language
 // (Electron's app.getPreferredSystemLanguages(), the only source on macOS, where an app
@@ -41,6 +43,29 @@ const session = new Session(store, eye, media, {
     applyProgress: p => send("applyProgress", p),
     convertProgress: p => send("convertProgress", p),
 }, () => settings);
+
+async function cacheUsage(): Promise<CacheUsage> {
+    const [thumbs, video, browser] = await Promise.all([dirUsage(THUMB_DIR), dirUsage(VIDEO_DIR), host("browserCache", { clear: false })]);
+    return { dir: CACHE_DIR, parts: { thumbs, video, analyses: store.cacheUsage(), browser: { bytes: browser, count: null } } };
+}
+
+async function clearCache(parts: CachePart[]): Promise<CacheUsage> {
+    // A running analysis reads display sources from thumbs/ and writes into cache.db; pulling
+    // a file from under Eye would fail that item.
+    const state = session.eyeStatus().state;
+    if ((parts.includes("thumbs") || parts.includes("analyses")) && (state === "running" || state === "starting")) {
+        throw new Error("analysis is running");
+    }
+    if (parts.includes("thumbs")) await clearDir(THUMB_DIR);
+    if (parts.includes("video")) {
+        await clearDir(VIDEO_DIR);
+        forgetProxies();
+    }
+    // The open folder keeps its analyses in memory; they are re-run when a folder is opened.
+    if (parts.includes("analyses")) store.clearCache();
+    if (parts.includes("browser")) await host("browserCache", { clear: true });
+    return cacheUsage();
+}
 
 serve({
     init: () => ({ settings, mediaBase: media.baseUrl, mediaToken: media.token, home: homedir(), systemLocale: systemLocale() }),
@@ -95,6 +120,8 @@ serve({
         const target = path ?? (id ? session.item(id)?.primary.path : undefined);
         return target ? host("openPath", { path: target }) : false;
     },
+    cacheUsage: () => cacheUsage(),
+    clearCache: ({ parts }) => clearCache(parts),
     // https only: the view is local, but nothing it sends should be able to launch file://
     // paths or custom URL schemes through this. The main process checks again.
     openUrl: ({ url }) => url.startsWith("https://") && host("openUrl", { url }),
