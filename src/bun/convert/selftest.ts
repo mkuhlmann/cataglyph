@@ -105,7 +105,13 @@ export async function selfTestExifPipeline(): Promise<void> {
         const read = await run([exiftool, "-s3", "-Artist", jxlPath]);
         const readback = read.stdout.trim();
         if (read.exitCode !== 0 || readback !== marker) {
-            throw new Error(`EXIF did not survive the pipeline (expected "${marker}", got ${JSON.stringify(readback)})`);
+            // cjxl 0.12 Brotli-compresses the Exif box (brob), and an exiftool whose perl lacks
+            // IO::Uncompress::Brotli reads it as empty: on such a host every conversion failed
+            // its readback with "got null" and nothing said why.
+            const hint = /IO::Uncompress::Brotli/.test(read.stderr)
+                ? "; exiftool's perl lacks IO::Uncompress::Brotli (Arch: perl-io-compress-brotli, Debian/Ubuntu: libio-compress-brotli-perl)"
+                : "";
+            throw new Error(`EXIF did not survive the pipeline (expected "${marker}", got ${JSON.stringify(readback)})${hint}`);
         }
     } finally {
         await rm(dir, { recursive: true, force: true }).catch(() => {});

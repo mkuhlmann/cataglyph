@@ -242,20 +242,18 @@ export async function runConvert(
     signal?: AbortSignal,
 ): Promise<ConvertSummary> {
     // Preflight. The self-test is fatal: some cjxl builds log that they embedded Exif and
-    // write nothing, and losing EXIF is not an acceptable failure mode. Needed whenever the
-    // pipeline goes through exiftool (migrateMetadata, or any HEIC job).
+    // write nothing, and losing EXIF is not an acceptable failure mode. It runs for every
+    // job, not only those that go through exiftool for the copy: each output's Exif is read
+    // back with exiftool too, and when that readback can't work (no Brotli module for the
+    // brob box cjxl writes) every photo was encoded and then discarded one by one.
     const cjxl = await checkCjxl(settings.migrateMetadata);
-    const needsExiftool = settings.migrateMetadata || jobs.some(j => HEIF_EXTENSIONS.has(j.still.ext.toLowerCase()));
     const exiftool = await exiftoolVersion();
-    let selfTest = "not needed";
-    if (needsExiftool) {
-        try {
-            await selfTestExifPipeline();
-        } catch (err) {
-            throw new Error(`EXIF self-test failed, nothing was converted: ${errorMessage(err)}`);
-        }
-        selfTest = "passed";
+    try {
+        await selfTestExifPipeline();
+    } catch (err) {
+        throw new Error(`EXIF self-test failed, nothing was converted: ${errorMessage(err)}`);
     }
+    const selfTest = "passed";
 
     const results: ConvertResult[] = [];
     const madeDirs = new Set<string>();

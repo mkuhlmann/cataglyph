@@ -68,7 +68,7 @@ bun run package       # or: hutch run package (alias: hutch run appimage)
 On Linux this writes `artifacts/Cataglyph-<version>-linux-x86_64.AppImage` (~233 MB). The image
 contains Electron, Bun, the native Eye core with the GPU accelerator, the model, cjxl and
 exiftool. The host still needs `perl` with `IO::Uncompress::Brotli` (Debian/Ubuntu:
-`libio-compress-brotli-perl`): cjxl Brotli-compresses the Exif it writes, and without the
+`libio-compress-brotli-perl`, Arch: `perl-io-compress-brotli`): cjxl Brotli-compresses the Exif it writes, and without the
 module exiftool can't update it, so the EXIF self-test stops every conversion. Install `ffmpeg` too if you want video thumbnails.
 Building needs `squashfs-tools`. On Ubuntu 24.04+ (AppArmor restricts unprivileged user
 namespaces) the AppImage starts Electron with `--no-sandbox`.
