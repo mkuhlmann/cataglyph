@@ -204,10 +204,25 @@ export class Session {
             this.setEye({ adapter: this.eye.status?.adapter ?? this.eyeInfo.adapter });
         };
 
+        // A GPU process that loads but can't run the model (Dawn on Mesa ANV with the Xe KMD,
+        // Intel Arc on Meteor Lake: kernels compile, then every run fails with "the model
+        // failed to run") stays up, so the crash fallback below never fires and every photo
+        // failed. Until one GPU run has succeeded, a failure moves the session to the CPU.
+        // Shared, because both workers see the failure and only one CPU process is wanted.
+        let gpuWorked = false;
+        let toCpu: Promise<void> | null = null;
+        const fallBackToCpu = () => toCpu ??= (async () => {
+            this.eye.kill();
+            const status = await this.eye.start(false);
+            this.setEye({ accelerator: status.accelerator, adapter: null, fellBackToCpu: true });
+        })();
+
         const one = async (item: Item, retry = true): Promise<void> => {
+            const accelerator = this.eye.status?.accelerator;
             try {
                 const src = await displaySource(item);
                 const { summary, json } = await this.eye.analyze(src);
+                if (accelerator === "gpu") gpuWorked = true;
                 if (generation !== this.generation) return;
                 this.store.putAnalysis(item.contentKey, EYE_MODEL, summary, json);
                 this.analyses[item.id] = summary;
@@ -217,9 +232,17 @@ export class Session {
                 msCount++;
                 sinceGroup++;
             } catch (err) {
-                // A crashed Eye process rejects everything in flight. Restart it once (on the
-                // CPU if the GPU path was the one that died) and retry this photo.
-                if (!this.eye.running && retry) {
+                if (retry && accelerator === "gpu" && !gpuWorked) {
+                    try {
+                        console.warn(`[eye] GPU run failed, falling back to CPU: ${(err as Error).message}`);
+                        await fallBackToCpu();
+                        return one(item, false);
+                    } catch {
+                        // fall through to the per-item error
+                    }
+                } else if (!this.eye.running && retry) {
+                    // A crashed Eye process rejects everything in flight. Restart it once (on
+                    // the CPU if the GPU path was the one that died) and retry this photo.
                     try {
                         const status = await this.eye.start(false);
                         this.setEye({ accelerator: status.accelerator, adapter: null, fellBackToCpu: true });
