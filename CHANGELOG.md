@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.1](https://github.com/mkuhlmann/cataglyph/compare/v0.4.0...v0.4.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* **convert:** run the EXIF self-test for every conversion and name a missing Brotli module ([6511262](https://github.com/mkuhlmann/cataglyph/commit/65112627c91725303e369fcd48a9d9547d9a8595))
+* **eye:** don't let a replaced Eye process reject its successor's requests ([bece20c](https://github.com/mkuhlmann/cataglyph/commit/bece20c9b5f316a72342b4a0936cbc0f55577ec7))
+* **eye:** fall back to CPU when GPU runs fail ([60f5c10](https://github.com/mkuhlmann/cataglyph/commit/60f5c1071e658698b6c3386e321dd4553a1094fd))
+
 ## [0.4.0](https://github.com/mkuhlmann/cataglyph/compare/v0.3.0...v0.4.0) (2026-10-25)
 
 
