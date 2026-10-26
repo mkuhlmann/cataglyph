@@ -101,9 +101,13 @@ export class EyeClient {
                 onExit: (_p, code, signal) => {
                     const err = new Error(`Eye process exited (${signal ?? code})`);
                     if (!ready) reject(err);
-                    for (const p of this.pending.values()) p.reject(err);
-                    this.pending.clear();
-                    if (this.proc === proc) this.proc = null;
+                    // Only for the current process: a killed one exits after its replacement
+                    // was spawned, and its exit rejected the retry already sent to the CPU
+                    // process (the first photo of a GPU-to-CPU fallback was always lost).
+                    // kill() has rejected that process's requests already.
+                    if (this.proc !== proc) return;
+                    this.rejectPending(err);
+                    this.proc = null;
                 },
             });
             this.proc = proc;
@@ -173,6 +177,12 @@ export class EyeClient {
     kill() {
         this.proc?.kill();
         this.proc = null;
+        this.rejectPending(new Error("Eye process was stopped"));
+    }
+
+    private rejectPending(err: Error) {
+        for (const p of this.pending.values()) p.reject(err);
+        this.pending.clear();
     }
 
     async stop() {
@@ -180,8 +190,8 @@ export class EyeClient {
         this.send({ type: "shutdown" });
         const proc = this.proc;
         await Promise.race([proc.exited, Bun.sleep(2000)]);
-        proc.kill();
-        this.proc = null;
+        if (this.proc === proc) this.kill();
+        else proc.kill();
     }
 }
 
